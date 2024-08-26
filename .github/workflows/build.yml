@@ -3,7 +3,7 @@ name: Build Kivy APK
 on:
   push:
     branches:
-      - development  # Adjust the branch name as needed
+      - development
   pull_request:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python environment
       uses: actions/setup-python@v2
       with:
-        python-version: '3.12.4'  # Replace with the Python version your project requires
+        python-version: '3.12.4'
 
     - name: Install dependencies
       run: |
