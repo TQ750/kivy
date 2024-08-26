@@ -235,9 +235,15 @@ class MyApp(MDApp):
         id_card_photo_path = f"{CARD_FOLDER}/{username}_card.jpg"
         bucket.blob(id_card_photo_path).upload_from_filename(self.selected_file_path, content_type='image/jpeg')
 
+        # Download the captured face photo from Firebase Storage
+        blob = bucket.blob(self.captured_face_path)
+        bytes_io = io.BytesIO()
+        blob.download_to_file(bytes_io)
+        bytes_io.seek(0)
+
         # Upload face photo to Firebase Storage
         face_photo_path = f"{FACE_FOLDER}/{username}_face.jpg"
-        bucket.blob(face_photo_path).upload_from_filename(self.captured_face_path, content_type='image/jpeg')
+        bucket.blob(face_photo_path).upload_from_string(bytes_io.getvalue(), content_type='image/jpeg')
 
         self.show_dialog("Success", "Registration successful. Please log in.")
         self.root.current = 'login'
@@ -334,10 +340,11 @@ class MyApp(MDApp):
             return
 
         # Upload the captured face photo to Firebase Storage
-        captured_face_path = f"{FACE_FOLDER}/{username}_face.jpg"
-        bucket.blob(captured_face_path).upload_from_string(cv2.imencode('.jpg', frame)[1].tobytes(), content_type='image/jpeg')
+        face_photo_path = f"{FACE_FOLDER}/{username}_face.jpg"
+        blob = bucket.blob(face_photo_path)
+        blob.upload_from_string(cv2.imencode('.jpg', frame)[1].tobytes(), content_type='image/jpeg')
 
-        self.captured_face_path = captured_face_path
+        self.captured_face_path = face_photo_path
         self.show_dialog("Success", "Face photo captured successfully")
 
     def file_manager_open(self):
