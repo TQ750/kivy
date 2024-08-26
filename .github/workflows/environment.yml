@@ -1,16 +1,13 @@
-name: myenv
+name: base
 channels:
   - defaults
 dependencies:
-  - python=3.8
-  - numpy
-  - pandas
-  - scipy
+  - python=3.12.4
   - pip
   - pip:
     - kivy
     - torch
-    - opencv-python
+    - opencv-python-headless
     - face_recognition
     - facenet_pytorch
-    - firebase_admin
+    - firebase-admin
