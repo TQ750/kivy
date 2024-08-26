@@ -7,46 +7,45 @@ on:
   pull_request:
     branches:
       - '*'
-
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3  # Updated to v3
+      uses: actions/checkout@v3
 
-    - name: Cache dependencies
-      uses: actions/cache@v3  # Updated to v3
+    - name: Set up JDK
+      uses: actions/setup-java@v3
       with:
-        path: |
-          ~/.pub-cache
-        key: ${{ runner.os }}-pub-cache-${{ hashFiles('**/pubspec.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pub-cache-
+        java-version: '11'
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.13.1'  # Update to the Flutter version you're using
+    - name: Install Android SDK
+      run: |
+        sudo apt update
+        sudo apt install -y wget unzip
+        wget https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip
+        unzip commandlinetools-linux-7583922_latest.zip -d android-sdk
+        export ANDROID_HOME=$PWD/android-sdk
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+        yes | sdkmanager --licenses
 
-    - name: Install dependencies
-      run: flutter pub get
+    - name: Accept SDK licenses
+      run: echo "y" | sdkmanager --licenses
+
+    - name: Install Android Build-Tools
+      run: sdkmanager "build-tools;35.0.0"
+
+    - name: Set up Buildozer
+      run: |
+        pip install buildozer
 
     - name: Build APK
-      run: flutter build apk --release
-
-    - name: Build AppBundle
-      run: flutter build appbundle --release
-
-    - name: Run tests
-      run: flutter test
+      run: buildozer android debug
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3  # Updated to v3
+      uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
         path: |
-          build/app/outputs/flutter-apk/*.apk
-          build/app/outputs/bundle/*.aab
+          ./bin/*.apk
