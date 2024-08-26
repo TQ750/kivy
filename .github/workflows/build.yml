@@ -20,28 +20,30 @@ jobs:
       with:
         java-version: '11'
 
-    - name: Install Android SDK
+    - name: Install Android SDK Command Line Tools
       run: |
         sudo apt update
         sudo apt install -y wget unzip
-        wget https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip
-        unzip commandlinetools-linux-7583922_latest.zip -d android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        unzip commandlinetools-linux-8512546_latest.zip -d android-sdk
         export ANDROID_HOME=$PWD/android-sdk
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-        yes | sdkmanager --licenses
 
-    - name: Accept SDK licenses
-      run: echo "y" | sdkmanager --licenses
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | sdkmanager --licenses || true
 
     - name: Install Android Build-Tools
-      run: sdkmanager "build-tools;35.0.0"
+      run: |
+        sdkmanager "build-tools;35.0.0" || true
 
-    - name: Set up Buildozer
+    - name: Install Buildozer
       run: |
         pip install buildozer
 
     - name: Build APK
-      run: buildozer android debug
+      run: |
+        buildozer android debug
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
