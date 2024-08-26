@@ -34,12 +34,20 @@ jobs:
 
     - name: Accept Android SDK Licenses
       run: |
-        echo y | sdkmanager --licenses
+        echo yes | sdkmanager --licenses
         sdkmanager --update
 
     - name: Install Android Build-Tools
       run: |
         sdkmanager "build-tools;35.0.0"
+
+    - name: Check Aidl
+      run: |
+        if ! command -v aidl &> /dev/null
+        then
+            echo "Aidl could not be found. Installing..."
+            sdkmanager "build-tools;35.0.0"
+        fi
 
     - name: Install Buildozer
       run: |
