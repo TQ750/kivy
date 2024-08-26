@@ -1,65 +1,42 @@
-name: Build and Test
-
+name: CI
 on:
   push:
-    branches:
-      - development
-  pull_request:
-    branches:
-      - '*'
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
+      used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+        shell: bash
 
-    - name: Install Android SDK Command Line Tools
-      run: |
-        sudo apt update
-        sudo apt install -y wget unzip
-        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-        unzip commandlinetools-linux-8512546_latest.zip -d android-sdk
-        export ANDROID_HOME=$PWD/android-sdk
-        mkdir -p $ANDROID_HOME/cmdline-tools/latest
-        mv android-sdk/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-    - name: Accept Android SDK Licenses
-      run: |
-        echo yes | sdkmanager --licenses
-        sdkmanager --update
+      - uses: actions/cache@v2
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-    - name: Install Android Build-Tools
-      run: |
-        sdkmanager "build-tools;35.0.0"
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
-    - name: Check Aidl
-      run: |
-        if ! command -v aidl &> /dev/null
-        then
-            echo "Aidl could not be found. Installing..."
-            sdkmanager "build-tools;35.0.0"
-        fi
-
-    - name: Install Buildozer
-      run: |
-        pip install buildozer
-
-    - name: Build APK
-      run: |
-        buildozer android debug
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-artifacts
-        path: |
-          ./bin/*.apk
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
