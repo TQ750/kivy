@@ -8,50 +8,44 @@ on:
     branches:
       - '*'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3  # Updated to v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Cache dependencies
+      uses: actions/cache@v3  # Updated to v3
       with:
-        python-version: '3.10'  # Adjust Python version as needed
+        path: |
+          ~/.pub-cache
+        key: ${{ runner.os }}-pub-cache-${{ hashFiles('**/pubspec.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pub-cache-
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.13.1'  # Update to the Flutter version you're using
 
     - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip python3-dev build-essential libgl1-mesa-dev libgles2-mesa-dev
-        pip install --upgrade pip
-        pip install kivy kivymd face_recognition facenet_pytorch
-
-    - name: Install Buildozer
-      run: |
-        pip install buildozer
+      run: flutter pub get
 
     - name: Build APK
-      run: |
-        buildozer android debug
+      run: flutter build apk --release
+
+    - name: Build AppBundle
+      run: flutter build appbundle --release
 
     - name: Run tests
-      run: |
-        # Assuming you have test scripts or a test suite
-        echo "Running tests..."
-        # Example: python -m unittest discover -s tests
-        # Adjust with your actual test command if needed
+      run: flutter test
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3  # Updated to v3
       with:
-        name: build
+        name: build-artifacts
         path: |
-          bin/*.apk
-          # Add paths to any other artifacts you want to upload
-
-    - name: Clean up
-      run: |
-        buildozer android clean
+          build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/bundle/*.aab
